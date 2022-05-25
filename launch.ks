@@ -12,7 +12,7 @@ function main {
   }
   doShutdown().
   executeManeuver(time:seconds + 210, 0, 0, 480).
-  print "Launch script complete".
+  print "Orbital insertion complete".
 }
 
 function doLaunch {
@@ -40,13 +40,13 @@ function doAutoStage {
 function doShutdown {
   lock throttle to 0.
   lock steering to prograde.
-  print "Shutdown".
+  print "Engine shutdown".
 }
 
 function doSafeStage {
   wait until stage:ready.
   stage.
-  print "Stage".
+  print "Staging".
 }
 
 function executeManeuver {
@@ -55,14 +55,14 @@ function executeManeuver {
   local mnv is node(utime, radial, normal, prog).
   add mnv.
   local startTime is calculateStartTime(mnv).
-  wait until time:seconds > startTime - 10.
-  lockSteeringAtManeuverTarget(mnv).
+  wait until time:seconds > startTime - 20.
+  lock steering to mnv:burnvector.
+  print "Locking steering to burn vector".
   wait until time:seconds > startTime.
   lock throttle to 1.
   print "Burning".
   wait until isManeuverComplete(mnv).
   remove mnv.
-  print "Burn complete, removing node".
 }
 
 function calculateStartTime {
@@ -72,12 +72,25 @@ function calculateStartTime {
 
 function maneuverBurnTime {
   parameter mnv.
-  return mnv:deltav:mag/(ship:maxthrust/ship:mass).
-}
 
-function lockSteeringAtManeuverTarget {
-  parameter mnv.
-  lock steering to mnv:burnvector.
+  local dV is mnv:deltav:mag.
+  local g0 is 9.80665.
+  local isp is 0.
+
+  list engines in myEngines.
+  for en in myEngines {
+    if en:ignition and not en:flameout {
+      set isp to isp + (en:isp * (en:maxThrust / ship:maxThrust)).
+    }
+  }
+
+  local massFinal is ship:mass / constant():e^(dV /(isp * g0)).
+  local massFlowRate is ship:maxthrust / (isp * g0).
+  local t is (ship:mass - massFinal)/massFlowRate.
+
+  print "Burntime is " + t + "s".
+  return t.
+// return mnv:deltav:mag/(ship:maxthrust/ship:mass). // simplified calculation (works)
 }
 
 function isManeuverComplete {
