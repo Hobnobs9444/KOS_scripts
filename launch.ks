@@ -1,5 +1,9 @@
 //Functional script to launch a Kerbal X
 
+// Heavily plagirised from CheersKevin's excellent youtube tutorial 
+// https://www.youtube.com/watch?v=1yS3BUxQ-VQ&list=RDCMUC-Fn23Q_91AEQHr2uNMd2VQ&index=2
+
+
 function main {
   doLaunch().
   doAscent().
@@ -8,7 +12,7 @@ function main {
   }
   doShutdown().
   executeManeuver(time:seconds + 210, 0, 0, 480).
-  print "it ran!".
+  print "Launch script complete".
 }
 
 function doLaunch {
