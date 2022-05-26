@@ -3,7 +3,6 @@
 // Heavily plagirised from CheersKevin's excellent youtube tutorial 
 // https://www.youtube.com/watch?v=1yS3BUxQ-VQ&list=RDCMUC-Fn23Q_91AEQHr2uNMd2VQ&index=2
 
-
 function main {
   doLaunch().
   doAscent().
@@ -11,7 +10,7 @@ function main {
     doAutoStage().
   }
   doShutdown().
-  executeManeuver(time:seconds + 210, 0, 0, 480).
+  doCircularization().
   print "Orbital insertion complete".
 }
 
@@ -49,13 +48,59 @@ function doSafeStage {
   print "Staging".
 }
 
+function doCircularization {
+  print "Computing optimal circularization maneuver".
+  local circ is list(time:seconds +120, 0, 0, 0).
+  until false {
+    local oldScore is score(circ).
+    set circ to improve(circ).
+    if oldScore <= score(circ) {
+      break.
+    } 
+  }
+  print "Optimal circularization maneuver identified".
+  executeManeuver(circ).
+}
+
+function score {
+  parameter nd.
+  local mnv is node(nd[0], nd[1], nd[2], nd[3]).
+  add mnv.
+  local result is mnv:orbit:eccentricity.
+  remove mnv.
+  return result.
+}
+
+function improve {
+  parameter nd.
+  local scoreToBeat is score(nd).
+  local bestCandidate is nd.
+  local candidates is list(
+    list(nd[0] + 1, nd[1], nd[2], nd[3]),
+    list(nd[0] - 1, nd[1], nd[2], nd[3]),
+    list(nd[0], nd[1] + 1, nd[2], nd[3]),
+    list(nd[0], nd[1] - 1, nd[2], nd[3]),
+    list(nd[0], nd[1], nd[2] + 1, nd[3]),
+    list(nd[0], nd[1], nd[2] - 1, nd[3]),
+    list(nd[0], nd[1], nd[2], nd[3] + 1),
+    list(nd[0], nd[1], nd[2], nd[3] - 1)
+  ).
+  for candidate in candidates {
+    local candidateScore is score(candidate).
+    if candidateScore < scoreToBeat {
+      set scoreToBeat to candidateScore.
+      set bestCandidate to candidate.
+    }  
+  }
+  return bestCandidate.
+}
+
 function executeManeuver {
-  parameter utime, radial, normal, prog.
-  print "Planning maneuver".
-  local mnv is node(utime, radial, normal, prog).
+  parameter mList.
+  local mnv is node(mList[0], mList[1], mList[2], mList[3]).
   add mnv.
   local startTime is calculateStartTime(mnv).
-  wait until time:seconds > startTime - 20.
+  wait until time:seconds > startTime - 30.
   lock steering to mnv:burnvector.
   print "Locking steering to burn vector".
   wait until time:seconds > startTime.
