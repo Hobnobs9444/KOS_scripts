@@ -107,6 +107,7 @@ function executeManeuver {
   lock throttle to 1.
   print "Burning".
   wait until isManeuverComplete(mnv).
+  unlock steering.
   remove mnv.
 }
 
