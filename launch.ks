@@ -11,7 +11,9 @@ function main {
   }
   doShutdown().
   doCircularization().
+  // doTransfer().
   print "Orbital insertion complete".
+  wait until false.
 }
 
 function doLaunch {
@@ -50,43 +52,73 @@ function doSafeStage {
 
 function doCircularization {
   print "Computing optimal circularization maneuver".
-  local circ is list(time:seconds +120, 0, 0, 0).
-  until false {
-    local oldScore is score(circ).
-    set circ to improve(circ).
-    if oldScore <= score(circ) {
-      break.
-    } 
-  }
-  print "Optimal circularization maneuver identified".
-  executeManeuver(circ).
+  local circ is list(time:seconds + 30, 0).
+  set circ to improveConverge(circ, eccentricityScore@).
+  print "Optimal Circularization maneuver identified".
+  executeManeuver(circ[0], 0, 0, circ[1]).
 }
 
-function score {
+function doTransfer {
+  print "Computing optimal transfer maneuver".
+  local transfer is list(time:seconds +30, 0, 0, 0).
+  set transfer to improveConverge(transfer, munTransferScore@).
+  print "Optimal transfer maneuver identified".
+  executeManeuver(transfer).
+}
+
+function eccentricityScore {
   parameter nd.
-  local mnv is node(nd[0], nd[1], nd[2], nd[3]).
+  local mnv is node(nd[0], 0, 0, nd[1]).
   add mnv.
   local result is mnv:orbit:eccentricity.
   remove mnv.
   return result.
 }
 
+function munTransferScore {
+// TODO
+}
+
+function improveConverge {
+  parameter nd, scoreFunction.
+  for stepSize in list(100, 10, 1) {
+    until false {
+      local oldScore is scoreFunction(nd).
+      set nd to improve(nd, stepSize, scoreFunction@).
+      if oldScore <= scoreFunction(nd) {
+        break.
+      } 
+    }
+  }  
+}
+
+
 function improve {
-  parameter nd.
-  local scoreToBeat is score(nd).
+  parameter nd, stepSize, scoreFunction. // nd is list(t, n, r, p)
+  local scoreToBeat is scoreFunction(nd).
   local bestCandidate is nd.
-  local candidates is list(
-    list(nd[0] + 1, nd[1], nd[2], nd[3]),
-    list(nd[0] - 1, nd[1], nd[2], nd[3]),
-    list(nd[0], nd[1] + 1, nd[2], nd[3]),
-    list(nd[0], nd[1] - 1, nd[2], nd[3]),
-    list(nd[0], nd[1], nd[2] + 1, nd[3]),
-    list(nd[0], nd[1], nd[2] - 1, nd[3]),
-    list(nd[0], nd[1], nd[2], nd[3] + 1),
-    list(nd[0], nd[1], nd[2], nd[3] - 1)
-  ).
+  local candidates is list().
+  local index is 0.
+  until index >= nd:length {
+    local incCandidate is nd:copy().
+    local decCandidate is nd:copy().
+    set incCandidate[index] to incCandidate[index] + stepSize.
+    set decCandidate[index] to decCandidate[index] - stepSize.
+    candidates:add(incCandidate).
+    candidates:add(decCandidate).
+    set index to index + 1.
+  }
+  //   list(nd[0] + 1, nd[1], nd[2], nd[3]),
+  //   list(nd[0] - 1, nd[1], nd[2], nd[3]),
+  //   list(nd[0], nd[1] + 1, nd[2], nd[3]),
+  //   list(nd[0], nd[1] - 1, nd[2], nd[3]),
+  //   list(nd[0], nd[1], nd[2] + 1, nd[3]),
+  //   list(nd[0], nd[1], nd[2] - 1, nd[3]),
+  //   list(nd[0], nd[1], nd[2], nd[3] + 1),
+  //   list(nd[0], nd[1], nd[2], nd[3] - 1)
+  // ).
   for candidate in candidates {
-    local candidateScore is score(candidate).
+    local candidateScore is scoreFunction(candidate).
     if candidateScore < scoreToBeat {
       set scoreToBeat to candidateScore.
       set bestCandidate to candidate.
@@ -126,12 +158,12 @@ function maneuverBurnTime {
   list engines in myEngines.
   for en in myEngines {
     if en:ignition and not en:flameout {
-      set isp to isp + (en:isp * (en:maxThrust / ship:maxThrust)).
+      set isp to isp + (en:isp * (en:availableThrust / ship:availableThrust)).
     }
   }
 
   local massFinal is ship:mass / constant():e^(dV /(isp * g0)).
-  local massFlowRate is ship:maxthrust / (isp * g0).
+  local massFlowRate is ship:availableThrust / (isp * g0).
   local t is (ship:mass - massFinal)/massFlowRate.
 
   print "Burntime is " + t + "s".
