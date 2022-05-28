@@ -30,13 +30,20 @@ function ascent {
 }
 
 function AutoStage {
+    // Sequentially stage craft once when group of engines flameouts
+    // This approach failing as 2x boosters flameout at once leads to double stage
     list engines in EngineList.
+    local TimeToStage is False.
     for engine in EngineList {
         if engine:FLAMEOUT {
-            SafeStage().
-            wait 5.
+            set TimeToStage to True.
+            wait 1.
         }    
+        if TimeToStage = True {
+            SafeStage().
+        wait 1.
         list engines in EngineList.
+        }
     }
 }
 
