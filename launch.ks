@@ -83,10 +83,10 @@ function improve {
   local candidates is list(
     list(nd[0] + 1, nd[1], nd[2], nd[3]),
     list(nd[0] - 1, nd[1], nd[2], nd[3]),
-    list(nd[0], nd[1] + 1, nd[2], nd[3]),
-    list(nd[0], nd[1] - 1, nd[2], nd[3]),
-    list(nd[0], nd[1], nd[2] + 1, nd[3]),
-    list(nd[0], nd[1], nd[2] - 1, nd[3]),
+    // list(nd[0], nd[1] + 1, nd[2], nd[3]),
+    // list(nd[0], nd[1] - 1, nd[2], nd[3]),
+    // list(nd[0], nd[1], nd[2] + 1, nd[3]),
+    // list(nd[0], nd[1], nd[2] - 1, nd[3]),
     list(nd[0], nd[1], nd[2], nd[3] + 1),
     list(nd[0], nd[1], nd[2], nd[3] - 1)
   ).
