@@ -21,7 +21,7 @@ function doLaunch {
 }
 
 function doAscent {
-  lock targetPitch to 88.963 - 1.03287 * alt:radar^0.409511.
+  lock targetPitch to 0.0012 * alt:radar.
   set targetDirection to 90.
   lock steering to heading(targetDirection, targetPitch).
 }
