@@ -139,6 +139,7 @@ function executeManeuver {
   lock throttle to 1.
   print "Burning".
   wait until isManeuverComplete(mnv).
+  lock throttle to 0.
   unlock steering.
   remove mnv.
 }
@@ -150,22 +151,18 @@ function calculateStartTime {
 
 function maneuverBurnTime {
   parameter mnv.
-
   local dV is mnv:deltav:mag.
   local g0 is 9.80665.
   local isp is 0.
-
   list engines in myEngines.
   for en in myEngines {
     if en:ignition and not en:flameout {
       set isp to isp + (en:isp * (en:availableThrust / ship:availableThrust)).
     }
   }
-
   local massFinal is ship:mass / constant():e^(dV /(isp * g0)).
   local massFlowRate is ship:availableThrust / (isp * g0).
   local t is (ship:mass - massFinal)/massFlowRate.
-
   print "Burntime is " + t + "s".
   return t.
 // return mnv:deltav:mag/(ship:maxthrust/ship:mass). // simplified calculation (works)
