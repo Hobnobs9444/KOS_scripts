@@ -20,8 +20,13 @@ function doLaunch {
   doSafeStage().
 }
 
+function clampOutput {
+  parameter output, min, max.
+  return min(max(output, min), max). 
+}
+
 function doAscent {
-  lock targetPitch to 0.0012 * alt:radar.
+  lock targetPitch to clampOutput(90 - 0.00225 * alt:radar, 0, 90).
   set targetDirection to 90.
   lock steering to heading(targetDirection, targetPitch).
 }
